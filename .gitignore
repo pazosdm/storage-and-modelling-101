@@ -1,0 +1,22 @@
+# DuckDB databases
+*.duckdb
+*.duckdb.wal
+
+# User solutions (keep structure, ignore actual solutions)
+solutions/*.sql
+
+# Data directory contents
+data/*
+!data/.gitkeep
+
+# Go build artifacts
+/grader
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store

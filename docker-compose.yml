@@ -1,0 +1,13 @@
+services:
+  learn-duckdb:
+    build: .
+    container_name: storage-modelling-101
+    volumes:
+      # Mount exercises and solutions for live editing
+      - ./exercises:/workspace/exercises
+      - ./solutions:/workspace/solutions
+      # Persist any DuckDB databases created
+      - ./data:/workspace/data
+    stdin_open: true
+    tty: true
+    working_dir: /workspace

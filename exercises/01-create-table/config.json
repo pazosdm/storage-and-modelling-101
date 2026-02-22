@@ -1,0 +1,37 @@
+{
+  "id": "01-create-table",
+  "name": "Create a Table",
+  "description": "Learn how to create a basic table with appropriate data types and constraints.",
+  "checks": [
+    {
+      "name": "Table 'users' exists",
+      "query": "SELECT count(*) as cnt FROM information_schema.tables WHERE table_name = 'users'",
+      "expected": "[{\"cnt\": 1}]",
+      "description": "The 'users' table should exist"
+    },
+    {
+      "name": "Column 'id' exists with correct type",
+      "query": "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'id'",
+      "expected": "[{\"column_name\": \"id\", \"data_type\": \"INTEGER\"}]",
+      "description": "Column 'id' should be of type INTEGER"
+    },
+    {
+      "name": "Column 'username' exists with correct type",
+      "query": "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'username'",
+      "expected": "[{\"column_name\": \"username\", \"data_type\": \"VARCHAR\"}]",
+      "description": "Column 'username' should be of type VARCHAR"
+    },
+    {
+      "name": "Column 'email' exists with correct type",
+      "query": "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'email'",
+      "expected": "[{\"column_name\": \"email\", \"data_type\": \"VARCHAR\"}]",
+      "description": "Column 'email' should be of type VARCHAR"
+    },
+    {
+      "name": "Column 'created_at' exists with correct type",
+      "query": "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'created_at'",
+      "expected": "[{\"column_name\": \"created_at\", \"data_type\": \"TIMESTAMP\"}]",
+      "description": "Column 'created_at' should be of type TIMESTAMP"
+    }
+  ]
+}
