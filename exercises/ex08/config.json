@@ -1,0 +1,32 @@
+{
+  "id": "ex08",
+  "name": "Customer 360 Denormalized Table",
+  "description": "Build a pre-aggregated customer summary table combining sales history and product preferences",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "customer_360 has 3 rows",
+      "query": "SELECT COUNT(*) AS n FROM customer_360;",
+      "expected": "[{\"n\":3}]",
+      "description": "One row per customer"
+    },
+    {
+      "name": "Alice lifetime sales = 1209.92",
+      "query": "SELECT total_lifetime_sales FROM customer_360 WHERE customer_id = 1;",
+      "expected": "[{\"total_lifetime_sales\":1209.92}]",
+      "description": "Alice's total: 999.99 + 59.98 + 149.95 = 1209.92"
+    },
+    {
+      "name": "Alice has 2 distinct orders",
+      "query": "SELECT total_orders FROM customer_360 WHERE customer_id = 1;",
+      "expected": "[{\"total_orders\":2}]",
+      "description": "Alice placed orders 1001 and 1003"
+    },
+    {
+      "name": "Carol's favorite category is Electronics",
+      "query": "SELECT favorite_category FROM customer_360 WHERE customer_id = 3;",
+      "expected": "[{\"favorite_category\":\"Electronics\"}]",
+      "description": "Carol bought only Electronics (Laptop + Monitor)"
+    }
+  ]
+}

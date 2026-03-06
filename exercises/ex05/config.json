@@ -1,0 +1,37 @@
+{
+  "id": "ex05",
+  "name": "ER Design for a University System",
+  "description": "Design and implement a university course enrollment schema with proper constraints",
+  "checks": [
+    {
+      "name": "All four tables exist",
+      "query": "SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_name IN ('students','professors','courses','enrollments');",
+      "expected": "[{\"n\":4}]",
+      "description": "Tables students, professors, courses, and enrollments must all exist"
+    },
+    {
+      "name": "courses has foreign key to professors",
+      "query": "SELECT COUNT(*) AS n FROM duckdb_constraints() WHERE table_name = 'courses' AND constraint_type = 'FOREIGN KEY';",
+      "expected": "[{\"n\":1}]",
+      "description": "courses must have a FOREIGN KEY to professors"
+    },
+    {
+      "name": "enrollments has foreign keys to students and courses",
+      "query": "SELECT COUNT(*) AS n FROM duckdb_constraints() WHERE table_name = 'enrollments' AND constraint_type = 'FOREIGN KEY';",
+      "expected": "[{\"n\":2}]",
+      "description": "enrollments must have 2 FOREIGN KEY constraints (students and courses)"
+    },
+    {
+      "name": "3 students inserted",
+      "query": "SELECT COUNT(*) AS n FROM students;",
+      "expected": "[{\"n\":3}]",
+      "description": "Insert exactly 3 student rows"
+    },
+    {
+      "name": "5 enrollments inserted",
+      "query": "SELECT COUNT(*) AS n FROM enrollments;",
+      "expected": "[{\"n\":5}]",
+      "description": "Insert exactly 5 enrollment rows"
+    }
+  ]
+}

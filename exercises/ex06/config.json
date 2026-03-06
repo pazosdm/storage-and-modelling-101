@@ -1,0 +1,32 @@
+{
+  "id": "ex06",
+  "name": "Resolve Many-to-Many Relationships",
+  "description": "Decompose a flat book-author table into a normalized schema with a junction table",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "authors has 5 distinct authors",
+      "query": "SELECT COUNT(*) AS n FROM authors;",
+      "expected": "[{\"n\":5}]",
+      "description": "5 unique authors: Ralph Kimball, Margy Ross, Martin Kleppmann, Len Silverston, Paul Agnew"
+    },
+    {
+      "name": "books has 4 books",
+      "query": "SELECT COUNT(*) AS n FROM books;",
+      "expected": "[{\"n\":4}]",
+      "description": "4 unique books"
+    },
+    {
+      "name": "book_authors has 6 relationships",
+      "query": "SELECT COUNT(*) AS n FROM book_authors;",
+      "expected": "[{\"n\":6}]",
+      "description": "6 book-author pairings (matching the original 6 rows)"
+    },
+    {
+      "name": "Ralph Kimball has 2 books",
+      "query": "SELECT COUNT(*) AS n FROM book_authors ba JOIN authors a ON ba.author_id = a.author_id WHERE a.author_name = 'Ralph Kimball';",
+      "expected": "[{\"n\":2}]",
+      "description": "Ralph Kimball authored 2 books"
+    }
+  ]
+}

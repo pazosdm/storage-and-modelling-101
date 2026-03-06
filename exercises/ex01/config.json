@@ -1,0 +1,32 @@
+{
+  "id": "ex01",
+  "name": "Normalize a Wide Table to 3NF",
+  "description": "Create normalized tables from a denormalized staging table",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "All four tables exist",
+      "query": "SELECT table_name FROM information_schema.tables WHERE table_schema = 'main' AND table_name IN ('customers','products','stores','orders') ORDER BY table_name;",
+      "expected": "[{\"table_name\":\"customers\"},{\"table_name\":\"orders\"},{\"table_name\":\"products\"},{\"table_name\":\"stores\"}]",
+      "description": "Expected 4 tables: customers, orders, products, stores"
+    },
+    {
+      "name": "Correct row counts",
+      "query": "SELECT 'customers' AS t, COUNT(*) AS n FROM customers UNION ALL SELECT 'products', COUNT(*) FROM products UNION ALL SELECT 'stores', COUNT(*) FROM stores UNION ALL SELECT 'orders', COUNT(*) FROM orders ORDER BY t;",
+      "expected": "[{\"t\":\"customers\",\"n\":4},{\"t\":\"orders\",\"n\":6},{\"t\":\"products\",\"n\":4},{\"t\":\"stores\",\"n\":3}]",
+      "description": "customers=4, orders=6, products=4, stores=3"
+    },
+    {
+      "name": "No duplicates in customers",
+      "query": "SELECT COUNT(*) = COUNT(DISTINCT customer_id) AS no_dupes FROM customers;",
+      "expected": "[{\"no_dupes\":true}]",
+      "description": "customers table should have no duplicate customer_ids"
+    },
+    {
+      "name": "Referential integrity: all order customer_ids exist in customers",
+      "query": "SELECT COUNT(*) AS n FROM orders o WHERE NOT EXISTS (SELECT 1 FROM customers c WHERE c.customer_id = o.customer_id);",
+      "expected": "[{\"n\":0}]",
+      "description": "All customer_ids in orders must exist in customers"
+    }
+  ]
+}

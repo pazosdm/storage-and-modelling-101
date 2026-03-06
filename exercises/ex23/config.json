@@ -1,0 +1,26 @@
+{
+  "id": "ex23",
+  "name": "Compression Comparison",
+  "description": "Export a large dataset with different Parquet compression codecs and compare file sizes",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "compression_comparison has 3 rows",
+      "query": "SELECT COUNT(*) AS n FROM compression_comparison;",
+      "expected": "[{\"n\":3}]",
+      "description": "One row per compression type: SNAPPY, ZSTD, UNCOMPRESSED"
+    },
+    {
+      "name": "Snappy file readable with 100000 rows",
+      "query": "SELECT COUNT(*) AS n FROM read_parquet('/tmp/ex23_snappy.parquet');",
+      "expected": "[{\"n\":100000}]",
+      "description": "The SNAPPY compressed file must be readable and contain all 100,000 rows"
+    },
+    {
+      "name": "ZSTD file readable with 100000 rows",
+      "query": "SELECT COUNT(*) AS n FROM read_parquet('/tmp/ex23_zstd.parquet');",
+      "expected": "[{\"n\":100000}]",
+      "description": "The ZSTD compressed file must be readable and contain all 100,000 rows"
+    }
+  ]
+}

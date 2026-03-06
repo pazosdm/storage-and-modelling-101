@@ -1,0 +1,32 @@
+{
+  "id": "ex16",
+  "name": "Data Vault: Hub, Link, Satellite",
+  "description": "Build a Data Vault model with Hub, Link, and Satellite tables from two source systems",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "Hub has 5 entries",
+      "query": "SELECT COUNT(*) AS n FROM h_customer;",
+      "expected": "[{\"n\":5}]",
+      "description": "One hub entry per unique business key (5 source IDs across CRM and ECOM)"
+    },
+    {
+      "name": "Link has 5 entries",
+      "query": "SELECT COUNT(*) AS n FROM l_customer_source;",
+      "expected": "[{\"n\":5}]",
+      "description": "One link entry per source customer mapping"
+    },
+    {
+      "name": "Satellite has 5 entries",
+      "query": "SELECT COUNT(*) AS n FROM s_customer_details;",
+      "expected": "[{\"n\":5}]",
+      "description": "One satellite entry per source customer's attributes"
+    },
+    {
+      "name": "All hub hash keys are 32-char MD5 strings",
+      "query": "SELECT COUNT(*) AS n FROM h_customer WHERE customer_hash_key IS NOT NULL AND length(customer_hash_key) = 32;",
+      "expected": "[{\"n\":5}]",
+      "description": "customer_hash_key must be MD5(business_key) — a 32-char hex string"
+    }
+  ]
+}

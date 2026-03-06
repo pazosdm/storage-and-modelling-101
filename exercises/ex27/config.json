@@ -1,0 +1,26 @@
+{
+  "id": "ex27",
+  "name": "Create and Evaluate Indexes",
+  "description": "Create an index on a large table and capture EXPLAIN output before and after to observe the difference",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "Index exists on customer_events",
+      "query": "SELECT COUNT(*) AS n FROM duckdb_indexes() WHERE table_name = 'customer_events' AND index_name = 'idx_customer_events_cid';",
+      "expected": "[{\"n\":1}]",
+      "description": "Index idx_customer_events_cid must be created on customer_events(customer_id)"
+    },
+    {
+      "name": "Point lookup for CUST-0042 returns 400 rows",
+      "query": "SELECT COUNT(*) AS n FROM customer_events WHERE customer_id = 'CUST-0042';",
+      "expected": "[{\"n\":400}]",
+      "description": "i%500=42 appears 400 times in 200,000 rows (200000/500=400)"
+    },
+    {
+      "name": "Both explain tables exist",
+      "query": "SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_name IN ('explain_no_index','explain_with_index');",
+      "expected": "[{\"n\":2}]",
+      "description": "EXPLAIN output must be saved into explain_no_index and explain_with_index tables"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "id": "ex04",
+  "name": "Normalization vs Query Complexity",
+  "description": "Experience the query complexity of a deeply normalized schema by flattening it into views and a denormalized table",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "v_sales_by_country returns 3 countries",
+      "query": "SELECT COUNT(*) AS n FROM v_sales_by_country;",
+      "expected": "[{\"n\":3}]",
+      "description": "The view should return one row per country (Brazil, Argentina, USA)"
+    },
+    {
+      "name": "USA has the highest total sales",
+      "query": "SELECT country_name FROM v_sales_by_country LIMIT 1;",
+      "expected": "[{\"country_name\":\"USA\"}]",
+      "description": "v_sales_by_country should be ordered by total_sales descending; USA (2300) is highest"
+    },
+    {
+      "name": "Alice is rank 1 in Brazil",
+      "query": "SELECT rank_in_country FROM v_top_customers_by_country WHERE customer_name = 'Alice';",
+      "expected": "[{\"rank_in_country\":1}]",
+      "description": "Alice has the most sales in Brazil (1400 total), so rank_in_country = 1"
+    },
+    {
+      "name": "dim_customer_flat has 5 rows with country populated",
+      "query": "SELECT COUNT(*) AS n FROM dim_customer_flat WHERE country_name IS NOT NULL;",
+      "expected": "[{\"n\":5}]",
+      "description": "All 5 customers should be present with country_name filled in"
+    }
+  ]
+}

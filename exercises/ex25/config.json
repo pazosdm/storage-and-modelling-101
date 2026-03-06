@@ -1,0 +1,38 @@
+{
+  "id": "ex25",
+  "name": "Simulate CDC with Incremental Loads",
+  "description": "Apply INSERT, UPDATE, and DELETE CDC changes to a warehouse table and record the audit log",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "3 products remain after CDC",
+      "query": "SELECT COUNT(*) AS n FROM warehouse_products;",
+      "expected": "[{\"n\":3}]",
+      "description": "3 original - 1 deleted + 1 inserted = 3 products remain"
+    },
+    {
+      "name": "Product 2 updated",
+      "query": "SELECT product_name, price FROM warehouse_products WHERE product_id = 2;",
+      "expected": "[{\"product_name\":\"Wireless Mouse\",\"price\":39.99}]",
+      "description": "Product 2 name and price updated per CDC record"
+    },
+    {
+      "name": "Product 3 deleted",
+      "query": "SELECT COUNT(*) AS n FROM warehouse_products WHERE product_id = 3;",
+      "expected": "[{\"n\":0}]",
+      "description": "Product 3 (Keyboard) must be deleted"
+    },
+    {
+      "name": "Product 4 inserted",
+      "query": "SELECT product_name FROM warehouse_products WHERE product_id = 4;",
+      "expected": "[{\"product_name\":\"Webcam\"}]",
+      "description": "New product Webcam must be inserted"
+    },
+    {
+      "name": "Audit log has 3 entries",
+      "query": "SELECT COUNT(*) AS n FROM cdc_audit_log;",
+      "expected": "[{\"n\":3}]",
+      "description": "One audit log entry per CDC change applied"
+    }
+  ]
+}

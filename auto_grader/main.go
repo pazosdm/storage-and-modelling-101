@@ -4,8 +4,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	_ "github.com/marcboeker/go-duckdb"
@@ -13,20 +15,20 @@ import (
 
 // Exercise represents a grading exercise configuration
 type Exercise struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	SetupSQL    string   `json:"setup_sql,omitempty"`    // SQL to run before the exercise (create tables, insert data)
-	SolutionSQL string   `json:"solution_sql"`           // Path to expected solution SQL file
-	Checks      []Check  `json:"checks"`                 // Validation checks to run
+	ID          string  `json:"id"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	SetupSQL    string  `json:"setup_sql,omitempty"`   // SQL to run before the exercise (create tables, insert data)
+	SolutionSQL string  `json:"solution_sql"`          // Path to expected solution SQL file
+	Checks      []Check `json:"checks"`                // Validation checks to run
 }
 
 // Check represents a validation check for an exercise
 type Check struct {
 	Name        string `json:"name"`
-	Query       string `json:"query"`        // Query to run against the result
-	Expected    string `json:"expected"`     // Expected result (JSON array of rows)
-	Description string `json:"description"`  // Human-readable description of what this checks
+	Query       string `json:"query"`       // Query to run against the result
+	Expected    string `json:"expected"`    // Expected result (JSON array of rows)
+	Description string `json:"description"` // Human-readable description of what this checks
 }
 
 // GradeResult represents the result of grading an exercise
@@ -63,6 +65,8 @@ func main() {
 		}
 		exerciseID := os.Args[2]
 		gradeExercise(exerciseID)
+	case "grade-all":
+		gradeAll()
 	case "list":
 		listExercises()
 	case "help":
@@ -79,11 +83,13 @@ func printUsage() {
 	fmt.Println()
 	fmt.Println("Usage:")
 	fmt.Println("  auto_grader grade <exercise_id>  - Grade your solution for an exercise")
+	fmt.Println("  auto_grader grade-all            - Grade all exercises and print a summary")
 	fmt.Println("  auto_grader list                 - List all available exercises")
 	fmt.Println("  auto_grader help                 - Show this help message")
 	fmt.Println()
-	fmt.Println("Example:")
-	fmt.Println("  auto_grader grade 01-create-table")
+	fmt.Println("Examples:")
+	fmt.Println("  auto_grader grade ex01")
+	fmt.Println("  auto_grader grade-all")
 }
 
 func listExercises() {
@@ -114,58 +120,139 @@ func gradeExercise(exerciseID string) {
 		os.Exit(1)
 	}
 
-	// Check if user's solution file exists
-	solutionPath := filepath.Join("solutions", exerciseID+".sql")
-	if _, err := os.Stat(solutionPath); os.IsNotExist(err) {
-		fmt.Printf("Error: Solution file not found: %s\n", solutionPath)
-		fmt.Println()
-		fmt.Printf("Create your solution at: %s\n", solutionPath)
+	result := runExercise(exercise)
+	printResult(*exercise, result)
+}
+
+func gradeAll() {
+	exercises, err := loadExercises()
+	if err != nil {
+		fmt.Printf("Error loading exercises: %v\n", err)
 		os.Exit(1)
+	}
+
+	if len(exercises) == 0 {
+		fmt.Println("No exercises found.")
+		return
+	}
+
+	type summary struct {
+		id         string
+		name       string
+		passed     bool
+		noSolution bool
+		checks     int
+		passing    int
+	}
+
+	var results []summary
+	totalPassed := 0
+
+	fmt.Println("Running all exercises...")
+	fmt.Println()
+
+	for _, ex := range exercises {
+		solutionPath := filepath.Join("solutions", ex.ID+".sql")
+		if _, err := os.Stat(solutionPath); os.IsNotExist(err) {
+			results = append(results, summary{
+				id:         ex.ID,
+				name:       ex.Name,
+				noSolution: true,
+			})
+			continue
+		}
+
+		result := runExercise(&ex)
+		passing := 0
+		for _, cr := range result.Details {
+			if cr.Passed {
+				passing++
+			}
+		}
+		results = append(results, summary{
+			id:      ex.ID,
+			name:    ex.Name,
+			passed:  result.Passed,
+			checks:  len(ex.Checks),
+			passing: passing,
+		})
+		if result.Passed {
+			totalPassed++
+		}
+	}
+
+	fmt.Println("=== Results Summary ===")
+	fmt.Println()
+	for _, r := range results {
+		if r.noSolution {
+			fmt.Printf("⏭️  %s - %s (no solution file found)\n", r.id, r.name)
+		} else if r.passed {
+			fmt.Printf("✅ %s - %s (%d/%d checks)\n", r.id, r.name, r.passing, r.checks)
+		} else {
+			fmt.Printf("❌ %s - %s (%d/%d checks)\n", r.id, r.name, r.passing, r.checks)
+		}
+	}
+
+	fmt.Println()
+	fmt.Printf("Score: %d/%d exercises passed\n", totalPassed, len(exercises))
+}
+
+func runExercise(exercise *Exercise) GradeResult {
+	result := GradeResult{
+		ExerciseID: exercise.ID,
+		Passed:     true,
+		Details:    []CheckResult{},
+	}
+
+	// Check if user's solution file exists
+	solutionPath := filepath.Join("solutions", exercise.ID+".sql")
+	if _, err := os.Stat(solutionPath); os.IsNotExist(err) {
+		result.Passed = false
+		result.Message = fmt.Sprintf("Solution file not found: %s", solutionPath)
+		return result
 	}
 
 	// Read user's solution
 	userSolution, err := os.ReadFile(solutionPath)
 	if err != nil {
-		fmt.Printf("Error reading solution: %v\n", err)
-		os.Exit(1)
+		result.Passed = false
+		result.Message = fmt.Sprintf("Error reading solution: %v", err)
+		return result
 	}
 
 	// Create in-memory DuckDB database
 	db, err := sql.Open("duckdb", "")
 	if err != nil {
-		fmt.Printf("Error creating database: %v\n", err)
-		os.Exit(1)
+		result.Passed = false
+		result.Message = fmt.Sprintf("Error creating database: %v", err)
+		return result
 	}
 	defer db.Close()
 
 	// Run setup SQL if provided
 	if exercise.SetupSQL != "" {
-		setupPath := filepath.Join("exercises", exerciseID, exercise.SetupSQL)
+		setupPath := filepath.Join("exercises", exercise.ID, exercise.SetupSQL)
 		setupSQL, err := os.ReadFile(setupPath)
 		if err != nil {
-			fmt.Printf("Error reading setup SQL: %v\n", err)
-			os.Exit(1)
+			result.Passed = false
+			result.Message = fmt.Sprintf("Error reading setup SQL: %v", err)
+			return result
 		}
 		if _, err := db.Exec(string(setupSQL)); err != nil {
-			fmt.Printf("Error running setup SQL: %v\n", err)
-			os.Exit(1)
+			result.Passed = false
+			result.Message = fmt.Sprintf("Error running setup SQL: %v", err)
+			return result
 		}
 	}
 
 	// Run user's solution
 	if _, err := db.Exec(string(userSolution)); err != nil {
-		fmt.Printf("❌ Error in your SQL:\n")
-		fmt.Printf("   %v\n", err)
-		os.Exit(1)
+		result.Passed = false
+		result.Message = fmt.Sprintf("Error in your SQL: %v", err)
+		return result
 	}
 
 	// Run checks
-	result := GradeResult{
-		ExerciseID: exerciseID,
-		Passed:     true,
-		Details:    []CheckResult{},
-	}
-
 	for _, check := range exercise.Checks {
 		checkResult := runCheck(db, check)
 		result.Details = append(result.Details, checkResult)
@@ -174,8 +261,7 @@ func gradeExercise(exerciseID string) {
 		}
 	}
 
-	// Print results
-	printResult(*exercise, result)
+	return result
 }
 
 func runCheck(db *sql.DB, check Check) CheckResult {
@@ -223,9 +309,6 @@ func runCheck(db *sql.DB, check Check) CheckResult {
 		results = append(results, row)
 	}
 
-	// Compare with expected
-	gotJSON, _ := json.Marshal(results)
-
 	// Parse expected JSON
 	var expected []map[string]interface{}
 	if err := json.Unmarshal([]byte(check.Expected), &expected); err != nil {
@@ -236,10 +319,11 @@ func runCheck(db *sql.DB, check Check) CheckResult {
 		}
 	}
 
-	// Simple comparison (could be made more sophisticated)
+	// Compare with tolerance-aware comparison
+	gotJSON, _ := json.Marshal(results)
 	expectedJSON, _ := json.Marshal(expected)
 
-	if normalizeJSON(string(gotJSON)) == normalizeJSON(string(expectedJSON)) {
+	if compareResults(results, expected) {
 		return CheckResult{
 			CheckName: check.Name,
 			Passed:    true,
@@ -256,17 +340,109 @@ func runCheck(db *sql.DB, check Check) CheckResult {
 	}
 }
 
-func normalizeJSON(s string) string {
-	var v interface{}
-	if err := json.Unmarshal([]byte(s), &v); err != nil {
-		return s
+// compareResults compares two result sets with tolerance for numeric types.
+// For numeric values, uses float64 comparison with a tolerance of 0.01.
+// For strings and booleans, uses exact comparison.
+func compareResults(got, expected []map[string]interface{}) bool {
+	if len(got) != len(expected) {
+		return false
 	}
-	normalized, _ := json.Marshal(v)
-	return string(normalized)
+
+	for i := range got {
+		gotRow := got[i]
+		expRow := expected[i]
+
+		// Column count must match
+		if len(gotRow) != len(expRow) {
+			return false
+		}
+
+		for key, expVal := range expRow {
+			gotVal, ok := gotRow[key]
+			if !ok {
+				return false
+			}
+			if !compareValues(gotVal, expVal) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// compareValues compares two values, using numeric tolerance for numbers.
+func compareValues(got, expected interface{}) bool {
+	// Both nil
+	if got == nil && expected == nil {
+		return true
+	}
+	if got == nil || expected == nil {
+		return false
+	}
+
+	// Try numeric comparison first
+	gotF, gotIsNum := toFloat64(got)
+	expF, expIsNum := toFloat64(expected)
+	if gotIsNum && expIsNum {
+		return math.Abs(gotF-expF) <= 0.01
+	}
+
+	// Boolean comparison
+	gotB, gotIsBool := got.(bool)
+	expB, expIsBool := expected.(bool)
+	if gotIsBool && expIsBool {
+		return gotB == expB
+	}
+
+	// String comparison (covers dates, strings, etc.)
+	gotStr := fmt.Sprintf("%v", got)
+	expStr := fmt.Sprintf("%v", expected)
+	return gotStr == expStr
+}
+
+// toFloat64 attempts to convert a value to float64. Returns (value, true) on success.
+func toFloat64(v interface{}) (float64, bool) {
+	switch val := v.(type) {
+	case float64:
+		return val, true
+	case float32:
+		return float64(val), true
+	case int:
+		return float64(val), true
+	case int8:
+		return float64(val), true
+	case int16:
+		return float64(val), true
+	case int32:
+		return float64(val), true
+	case int64:
+		return float64(val), true
+	case uint:
+		return float64(val), true
+	case uint8:
+		return float64(val), true
+	case uint16:
+		return float64(val), true
+	case uint32:
+		return float64(val), true
+	case uint64:
+		return float64(val), true
+	case json.Number:
+		if f, err := val.Float64(); err == nil {
+			return f, true
+		}
+	}
+	return 0, false
 }
 
 func printResult(exercise Exercise, result GradeResult) {
 	fmt.Printf("\n=== Grading: %s ===\n\n", exercise.Name)
+
+	if result.Message != "" && len(result.Details) == 0 {
+		fmt.Printf("❌ %s\n", result.Message)
+		fmt.Println()
+		return
+	}
 
 	allPassed := true
 	for _, check := range result.Details {
@@ -337,6 +513,11 @@ func loadExercises() ([]Exercise, error) {
 		}
 		exercises = append(exercises, exercise)
 	}
+
+	// Sort by ID for consistent ordering
+	sort.Slice(exercises, func(i, j int) bool {
+		return exercises[i].ID < exercises[j].ID
+	})
 
 	return exercises, nil
 }

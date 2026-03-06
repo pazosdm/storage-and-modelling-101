@@ -1,0 +1,32 @@
+{
+  "id": "ex21",
+  "name": "Read and Write Multiple File Formats",
+  "description": "Export data to CSV, Parquet, and JSON formats, then read them back into tables",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "All three reimport tables exist",
+      "query": "SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_name IN ('csv_reimport','parquet_reimport','json_reimport');",
+      "expected": "[{\"n\":3}]",
+      "description": "Tables csv_reimport, parquet_reimport, and json_reimport must all be created"
+    },
+    {
+      "name": "csv_reimport has 4 rows",
+      "query": "SELECT COUNT(*) AS n FROM csv_reimport;",
+      "expected": "[{\"n\":4}]",
+      "description": "CSV reimport should have the same 4 rows as the original"
+    },
+    {
+      "name": "parquet_reimport has 4 rows",
+      "query": "SELECT COUNT(*) AS n FROM parquet_reimport;",
+      "expected": "[{\"n\":4}]",
+      "description": "Parquet reimport should have the same 4 rows as the original"
+    },
+    {
+      "name": "parquet_reimport amounts sum to 751.50",
+      "query": "SELECT ROUND(SUM(amount), 2) AS total FROM parquet_reimport;",
+      "expected": "[{\"total\":751.5}]",
+      "description": "100.50 + 200.75 + 300.00 + 150.25 = 751.50"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "id": "ex11",
+  "name": "Define Grain and Design Fact Tables",
+  "description": "Build two fact tables with different grains from raw web session and order data",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "fact_sessions has 5 rows",
+      "query": "SELECT COUNT(*) AS n FROM fact_sessions;",
+      "expected": "[{\"n\":5}]",
+      "description": "One row per web session"
+    },
+    {
+      "name": "fact_orders has 3 rows",
+      "query": "SELECT COUNT(*) AS n FROM fact_orders;",
+      "expected": "[{\"n\":3}]",
+      "description": "One row per order"
+    },
+    {
+      "name": "Session S1 duration is 15 minutes",
+      "query": "SELECT session_duration_minutes FROM fact_sessions WHERE session_id = 'S1';",
+      "expected": "[{\"session_duration_minutes\":15}]",
+      "description": "S1: 09:00 to 09:15 = 15 minutes"
+    },
+    {
+      "name": "Both organic sessions converted",
+      "query": "SELECT COUNT(*) AS n FROM fact_sessions WHERE session_id IN ('S1','S3') AND converted = true;",
+      "expected": "[{\"n\":2}]",
+      "description": "Sessions S1 and S3 are organic and both have converted=true"
+    }
+  ]
+}

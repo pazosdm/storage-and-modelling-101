@@ -1,0 +1,38 @@
+{
+  "id": "ex18",
+  "name": "Inmon 3NF vs Kimball Star: Build Both",
+  "description": "Implement the same business requirement using both the Inmon (3NF) and Kimball (star schema) approaches",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "inmon_transactions has 5 rows",
+      "query": "SELECT COUNT(*) AS n FROM inmon_transactions;",
+      "expected": "[{\"n\":5}]",
+      "description": "All 5 source transactions must be in the Inmon transactions table"
+    },
+    {
+      "name": "kimball_fact_sales has 5 rows",
+      "query": "SELECT COUNT(*) AS n FROM kimball_fact_sales;",
+      "expected": "[{\"n\":5}]",
+      "description": "All 5 source transactions must be in the Kimball fact table"
+    },
+    {
+      "name": "Inmon view: Brazil total = 2150",
+      "query": "SELECT total_amount FROM v_inmon_by_country WHERE country = 'Brazil';",
+      "expected": "[{\"total_amount\":2150.0}]",
+      "description": "Brazil: Alice (1000+60) + Bob (1000+90) = 2150"
+    },
+    {
+      "name": "Kimball view: Brazil total = 2150",
+      "query": "SELECT total_amount FROM v_kimball_by_country WHERE country = 'Brazil';",
+      "expected": "[{\"total_amount\":2150.0}]",
+      "description": "Both views should return identical results for Brazil"
+    },
+    {
+      "name": "inmon_transactions has 2 FKs",
+      "query": "SELECT COUNT(*) AS n FROM duckdb_constraints() WHERE table_name = 'inmon_transactions' AND constraint_type = 'FOREIGN KEY';",
+      "expected": "[{\"n\":2}]",
+      "description": "inmon_transactions must have FK to inmon_customers and inmon_products"
+    }
+  ]
+}

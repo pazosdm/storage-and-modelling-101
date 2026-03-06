@@ -1,0 +1,31 @@
+{
+  "id": "ex29",
+  "name": "Schema Constraints as Contracts",
+  "description": "Enforce a data contract via DDL constraints: PRIMARY KEY, NOT NULL, and CHECK",
+  "checks": [
+    {
+      "name": "fact_orders_contracted has PRIMARY KEY",
+      "query": "SELECT COUNT(*) AS n FROM duckdb_constraints() WHERE table_name = 'fact_orders_contracted' AND constraint_type = 'PRIMARY KEY';",
+      "expected": "[{\"n\":1}]",
+      "description": "order_id must be the PRIMARY KEY"
+    },
+    {
+      "name": "fact_orders_contracted has at least 2 CHECK constraints",
+      "query": "SELECT (COUNT(*) >= 2) AS ok FROM duckdb_constraints() WHERE table_name = 'fact_orders_contracted' AND constraint_type = 'CHECK';",
+      "expected": "[{\"ok\":true}]",
+      "description": "At least 2 CHECK constraints: quantity > 0 and unit_price >= 0"
+    },
+    {
+      "name": "5 valid rows inserted",
+      "query": "SELECT COUNT(*) AS n FROM fact_orders_contracted;",
+      "expected": "[{\"n\":5}]",
+      "description": "Exactly 5 valid rows must be present"
+    },
+    {
+      "name": "No invalid quantities",
+      "query": "SELECT COUNT(*) AS n FROM fact_orders_contracted WHERE quantity <= 0;",
+      "expected": "[{\"n\":0}]",
+      "description": "All rows must have quantity > 0 (enforced by CHECK constraint)"
+    }
+  ]
+}

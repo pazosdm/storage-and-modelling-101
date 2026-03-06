@@ -1,0 +1,32 @@
+{
+  "id": "ex09",
+  "name": "One Big Table for BI",
+  "description": "Pre-join all dimensions into a single flat OBT and create a monthly revenue view on top",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "sales_obt has 6 rows",
+      "query": "SELECT COUNT(*) AS n FROM sales_obt;",
+      "expected": "[{\"n\":6}]",
+      "description": "One row per fact_sales row (grain preserved)"
+    },
+    {
+      "name": "No NULL customer or product names",
+      "query": "SELECT COUNT(*) AS n FROM sales_obt WHERE customer_name IS NULL OR product_name IS NULL;",
+      "expected": "[{\"n\":0}]",
+      "description": "All dimension attributes must be fully populated"
+    },
+    {
+      "name": "January Electronics revenue",
+      "query": "SELECT ROUND(total_revenue, 2) AS total_revenue FROM v_monthly_category_revenue WHERE month = 1 AND product_category = 'Electronics';",
+      "expected": "[{\"total_revenue\":1499.98}]",
+      "description": "January Electronics: Laptop (999.99) + Monitor (499.99) = 1499.98"
+    },
+    {
+      "name": "Monthly category revenue view has 3 rows",
+      "query": "SELECT COUNT(*) AS n FROM v_monthly_category_revenue;",
+      "expected": "[{\"n\":3}]",
+      "description": "3 distinct (year, month, category) combinations: Jan Electronics, Jan Peripherals, Feb Electronics"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "id": "ex10",
+  "name": "Views vs Precomputed Summary Tables",
+  "description": "Compare a live view against a precomputed summary table; understand the tradeoffs",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "v_daily_revenue is a VIEW",
+      "query": "SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_name = 'v_daily_revenue' AND table_type = 'VIEW';",
+      "expected": "[{\"n\":1}]",
+      "description": "v_daily_revenue must be created as a VIEW, not a TABLE"
+    },
+    {
+      "name": "v_daily_revenue Jan 10 total = 1059.97",
+      "query": "SELECT ROUND(total_revenue, 2) AS total_revenue FROM v_daily_revenue WHERE order_date = '2025-01-10';",
+      "expected": "[{\"total_revenue\":1059.97}]",
+      "description": "Jan 10 revenue: Laptop (999.99) + Mouse x2 (59.98) = 1059.97"
+    },
+    {
+      "name": "summary_daily_revenue has 4 rows",
+      "query": "SELECT COUNT(*) AS n FROM summary_daily_revenue;",
+      "expected": "[{\"n\":4}]",
+      "description": "4 distinct order dates: Jan 10, Jan 12, Jan 15, Feb 01"
+    },
+    {
+      "name": "Monthly Brazil revenue = 1209.92",
+      "query": "SELECT ROUND(total_revenue, 2) AS total_revenue FROM summary_monthly_store_revenue WHERE month = 1 AND country = 'Brazil';",
+      "expected": "[{\"total_revenue\":1209.92}]",
+      "description": "Alice's January revenue: 999.99 + 59.98 + 149.95 = 1209.92"
+    }
+  ]
+}

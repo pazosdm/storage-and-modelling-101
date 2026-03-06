@@ -1,0 +1,26 @@
+{
+  "id": "ex14",
+  "name": "Many-to-Many with Bridge Table",
+  "description": "Model a many-to-many relationship between customers and loyalty programs using a bridge table",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "bridge_customer_program has 5 rows",
+      "query": "SELECT COUNT(*) AS n FROM bridge_customer_program;",
+      "expected": "[{\"n\":5}]",
+      "description": "5 customer-program memberships total"
+    },
+    {
+      "name": "Alice belongs to 2 programs",
+      "query": "SELECT COUNT(*) AS n FROM bridge_customer_program WHERE customer_id = 1;",
+      "expected": "[{\"n\":2}]",
+      "description": "Alice (customer_id=1) is in Gold and Platinum programs"
+    },
+    {
+      "name": "Gold program has 2 members",
+      "query": "SELECT COUNT(*) AS n FROM bridge_customer_program WHERE program_id = 10;",
+      "expected": "[{\"n\":2}]",
+      "description": "Gold program (program_id=10) has Alice and Carol"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "id": "ex28",
+  "name": "Columnar Scan Optimization",
+  "description": "Split a wide table into narrow projection and extended attributes to optimize columnar scans",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "events_core has 50000 rows",
+      "query": "SELECT COUNT(*) AS n FROM events_core;",
+      "expected": "[{\"n\":50000}]",
+      "description": "All 50,000 events must be in the core table"
+    },
+    {
+      "name": "events_core has 5 columns",
+      "query": "SELECT COUNT(*) AS n FROM information_schema.columns WHERE table_name = 'events_core';",
+      "expected": "[{\"n\":5}]",
+      "description": "events_core should have exactly 5 columns: event_id, event_date, user_id, event_type, amount"
+    },
+    {
+      "name": "events_extended has 50000 rows",
+      "query": "SELECT COUNT(*) AS n FROM events_extended;",
+      "expected": "[{\"n\":50000}]",
+      "description": "All 50,000 events must be in the extended table"
+    },
+    {
+      "name": "Join produces 50000 full rows",
+      "query": "SELECT COUNT(*) AS n FROM events_core c JOIN events_extended e ON c.event_id = e.event_id;",
+      "expected": "[{\"n\":50000}]",
+      "description": "Joining core and extended tables must recover all rows without any loss"
+    }
+  ]
+}

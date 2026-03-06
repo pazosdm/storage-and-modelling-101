@@ -1,0 +1,44 @@
+{
+  "id": "ex13",
+  "name": "SCD Type 2 (Preserve History)",
+  "description": "Implement SCD Type 2: close old records and insert new versions when attributes change",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "Total 5 rows in dim_customer_scd2",
+      "query": "SELECT COUNT(*) AS n FROM dim_customer_scd2;",
+      "expected": "[{\"n\":5}]",
+      "description": "3 original + 1 new C001 version + 1 new C004 = 5 (old C001 closed, C002 unchanged, C003 untouched)"
+    },
+    {
+      "name": "C001 has 2 versions",
+      "query": "SELECT COUNT(*) AS n FROM dim_customer_scd2 WHERE customer_id = 'C001';",
+      "expected": "[{\"n\":2}]",
+      "description": "C001 changed — old record closed, new record inserted"
+    },
+    {
+      "name": "Current C001 is in Campinas, Premium",
+      "query": "SELECT city, segment FROM dim_customer_scd2 WHERE customer_id = 'C001' AND is_current = true;",
+      "expected": "[{\"city\":\"Campinas\",\"segment\":\"Premium\"}]",
+      "description": "The new (current) version of C001 should reflect city=Campinas, segment=Premium"
+    },
+    {
+      "name": "Old C001 is closed",
+      "query": "SELECT valid_to, is_current FROM dim_customer_scd2 WHERE customer_id = 'C001' AND city = 'São Paulo';",
+      "expected": "[{\"valid_to\":\"2025-01-31\",\"is_current\":false}]",
+      "description": "The old C001 record must have valid_to = '2025-01-31' and is_current = false"
+    },
+    {
+      "name": "C002 unchanged — still 1 row",
+      "query": "SELECT COUNT(*) AS n FROM dim_customer_scd2 WHERE customer_id = 'C002';",
+      "expected": "[{\"n\":1}]",
+      "description": "C002 had no changes — no new version should be inserted"
+    },
+    {
+      "name": "C004 inserted as current",
+      "query": "SELECT COUNT(*) AS n FROM dim_customer_scd2 WHERE customer_id = 'C004' AND is_current = true;",
+      "expected": "[{\"n\":1}]",
+      "description": "New customer C004 must be inserted with is_current = true"
+    }
+  ]
+}

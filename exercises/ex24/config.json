@@ -1,0 +1,32 @@
+{
+  "id": "ex24",
+  "name": "Hot/Cold Table Splitting",
+  "description": "Split a large fact table into hot (recent) and cold (historical) partitions and create a unified view",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "hot + cold = 10000 rows total",
+      "query": "SELECT (SELECT COUNT(*) FROM fact_sales_hot) + (SELECT COUNT(*) FROM fact_sales_cold) AS total;",
+      "expected": "[{\"total\":10000}]",
+      "description": "No rows should be lost when splitting the table"
+    },
+    {
+      "name": "No overlap between hot and cold",
+      "query": "SELECT COUNT(*) AS n FROM fact_sales_hot h JOIN fact_sales_cold c ON h.sale_id = c.sale_id;",
+      "expected": "[{\"n\":0}]",
+      "description": "Each row should appear in exactly one table (hot or cold)"
+    },
+    {
+      "name": "View returns all 10000 rows",
+      "query": "SELECT COUNT(*) AS n FROM v_fact_sales_all;",
+      "expected": "[{\"n\":10000}]",
+      "description": "The UNION view must seamlessly combine hot and cold"
+    },
+    {
+      "name": "Hot table contains only recent data",
+      "query": "SELECT COUNT(*) AS n FROM fact_sales_hot WHERE sale_date < (SELECT MAX(sale_date) - INTERVAL 6 MONTH FROM fact_sales_full);",
+      "expected": "[{\"n\":0}]",
+      "description": "fact_sales_hot must only contain sales from the last 6 months"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "id": "ex03",
+  "name": "Normalize Reference Data with Deduplication",
+  "description": "Extract and normalize category reference data, fixing typos in the process",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "categories has exactly 2 rows",
+      "query": "SELECT COUNT(*) AS n FROM categories;",
+      "expected": "[{\"n\":2}]",
+      "description": "Only 2 distinct categories after deduplication: Electronics and Furniture"
+    },
+    {
+      "name": "No typos in category names",
+      "query": "SELECT COUNT(*) AS n FROM categories WHERE category_name NOT IN ('Electronics', 'Furniture');",
+      "expected": "[{\"n\":0}]",
+      "description": "All category names must be exactly 'Electronics' or 'Furniture'"
+    },
+    {
+      "name": "products has 7 rows",
+      "query": "SELECT COUNT(*) AS n FROM products;",
+      "expected": "[{\"n\":7}]",
+      "description": "All 7 products from raw_products should be in the products table"
+    },
+    {
+      "name": "All products link to a valid category",
+      "query": "SELECT COUNT(*) AS n FROM products p WHERE NOT EXISTS (SELECT 1 FROM categories c WHERE c.category_id = p.category_id);",
+      "expected": "[{\"n\":0}]",
+      "description": "Every product must have a valid category_id FK"
+    },
+    {
+      "name": "Standing Desk maps to Furniture",
+      "query": "SELECT c.category_name FROM products p JOIN categories c ON p.category_id = c.category_id WHERE p.product_id = 4;",
+      "expected": "[{\"category_name\":\"Furniture\"}]",
+      "description": "Product 4 (Standing Desk) had a typo 'Furnitur' — must map to Furniture"
+    }
+  ]
+}

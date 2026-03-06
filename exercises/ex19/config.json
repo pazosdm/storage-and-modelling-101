@@ -1,0 +1,32 @@
+{
+  "id": "ex19",
+  "name": "Hybrid Model: Extract JSON Fields",
+  "description": "Promote frequently queried JSON fields to typed columns while keeping remaining fields in a JSON details column",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "fact_web_events has 5 rows",
+      "query": "SELECT COUNT(*) AS n FROM fact_web_events;",
+      "expected": "[{\"n\":5}]",
+      "description": "One row per raw_events entry"
+    },
+    {
+      "name": "All URLs extracted (no NULLs)",
+      "query": "SELECT COUNT(*) AS n FROM fact_web_events WHERE url IS NULL;",
+      "expected": "[{\"n\":0}]",
+      "description": "The url field must be extracted from JSON into a typed column for all rows"
+    },
+    {
+      "name": "4 mobile events",
+      "query": "SELECT COUNT(*) AS n FROM fact_web_events WHERE device = 'mobile';",
+      "expected": "[{\"n\":4}]",
+      "description": "Events E1, E2, E4, E5 have device=mobile"
+    },
+    {
+      "name": "2 events have campaign_id in details",
+      "query": "SELECT COUNT(*) AS n FROM fact_web_events WHERE json_extract_string(details, '$.campaign_id') IS NOT NULL;",
+      "expected": "[{\"n\":2}]",
+      "description": "Events E1 and E3 have campaign_id in their remaining details JSON"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "id": "ex20",
+  "name": "Flatten Nested Arrays",
+  "description": "Use UNNEST to explode a JSON array of line items into a relational table",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "fact_invoice_lines has 6 rows",
+      "query": "SELECT COUNT(*) AS n FROM fact_invoice_lines;",
+      "expected": "[{\"n\":6}]",
+      "description": "Total line items: INV-001 (2) + INV-002 (1) + INV-003 (3) = 6"
+    },
+    {
+      "name": "INV-003 has 3 line items",
+      "query": "SELECT COUNT(*) AS n FROM fact_invoice_lines WHERE invoice_id = 'INV-003';",
+      "expected": "[{\"n\":3}]",
+      "description": "INV-003 has 3 products: Keyboard, USB Hub, Mouse"
+    },
+    {
+      "name": "Customer C1 total revenue = 1244.92",
+      "query": "SELECT ROUND(SUM(line_total), 2) AS total FROM fact_invoice_lines WHERE customer_id = 'C1';",
+      "expected": "[{\"total\":1244.92}]",
+      "description": "C1: Laptop(999.99)+Mouse x2(59.98)+Keyboard(79.99)+USB Hub x3(74.97)+Mouse(29.99)=1244.92"
+    },
+    {
+      "name": "Laptop line_total = 999.99",
+      "query": "SELECT line_total FROM fact_invoice_lines WHERE invoice_id = 'INV-001' AND product = 'Laptop';",
+      "expected": "[{\"line_total\":999.99}]",
+      "description": "Laptop: qty=1, price=999.99, line_total=999.99"
+    }
+  ]
+}

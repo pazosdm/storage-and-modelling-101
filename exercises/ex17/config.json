@@ -1,0 +1,32 @@
+{
+  "id": "ex17",
+  "name": "Conformed Dimensions Across Fact Tables",
+  "description": "Build two fact tables that share conformed dimensions, then drill across them",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "fact_sales_conf has 4 rows",
+      "query": "SELECT COUNT(*) AS n FROM fact_sales_conf;",
+      "expected": "[{\"n\":4}]",
+      "description": "One row per raw_sales entry"
+    },
+    {
+      "name": "fact_returns_conf has 2 rows",
+      "query": "SELECT COUNT(*) AS n FROM fact_returns_conf;",
+      "expected": "[{\"n\":2}]",
+      "description": "One row per raw_returns entry"
+    },
+    {
+      "name": "January Gadgets sales = 100",
+      "query": "SELECT SUM(f.revenue) AS n FROM fact_sales_conf f JOIN dim_product_conf p ON f.product_id = p.product_id JOIN dim_date_conf d ON f.sale_date = d.date_key WHERE p.category = 'Gadgets' AND d.month = 1;",
+      "expected": "[{\"n\":100.0}]",
+      "description": "Only Widget A sold in January (Gadgets category): revenue = 100"
+    },
+    {
+      "name": "February Gadgets sales = 200",
+      "query": "SELECT SUM(f.revenue) AS n FROM fact_sales_conf f JOIN dim_product_conf p ON f.product_id = p.product_id JOIN dim_date_conf d ON f.sale_date = d.date_key WHERE p.category = 'Gadgets' AND d.month = 2;",
+      "expected": "[{\"n\":200.0}]",
+      "description": "Widget A (150) + Widget C (50) sold in February (both Gadgets): revenue = 200"
+    }
+  ]
+}

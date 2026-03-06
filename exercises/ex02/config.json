@@ -1,0 +1,32 @@
+{
+  "id": "ex02",
+  "name": "Identify and Fix Anomalies",
+  "description": "Normalize a staging table while resolving update anomalies and enforcing constraints",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "customers has exactly 4 rows",
+      "query": "SELECT COUNT(*) AS n FROM customers;",
+      "expected": "[{\"n\":4}]",
+      "description": "4 distinct customers (no duplicate customer_ids)"
+    },
+    {
+      "name": "Alice has the most recent email",
+      "query": "SELECT customer_email FROM customers WHERE customer_id = 101;",
+      "expected": "[{\"customer_email\":\"alice.new@mail.com\"}]",
+      "description": "customer_id 101 should have email alice.new@mail.com (the latest one)"
+    },
+    {
+      "name": "orders table has 7 rows",
+      "query": "SELECT COUNT(*) AS n FROM orders;",
+      "expected": "[{\"n\":7}]",
+      "description": "All 7 orders from stg_orders must be in the orders table"
+    },
+    {
+      "name": "Primary key constraint on customers",
+      "query": "SELECT COUNT(*) AS n FROM duckdb_constraints() WHERE table_name = 'customers' AND constraint_type = 'PRIMARY KEY';",
+      "expected": "[{\"n\":1}]",
+      "description": "customers table must have a PRIMARY KEY constraint"
+    }
+  ]
+}

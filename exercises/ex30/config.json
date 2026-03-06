@@ -1,0 +1,50 @@
+{
+  "id": "ex30",
+  "name": "Data Quality Checks and SLA Metrics",
+  "description": "Compute a comprehensive data quality report table in a single INSERT...SELECT",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "dq_report has exactly 1 row",
+      "query": "SELECT COUNT(*) AS n FROM dq_report;",
+      "expected": "[{\"n\":1}]",
+      "description": "The quality report should be a single summary row"
+    },
+    {
+      "name": "total_rows = 8",
+      "query": "SELECT total_rows FROM dq_report;",
+      "expected": "[{\"total_rows\":8}]",
+      "description": "fact_daily_sales has 8 rows"
+    },
+    {
+      "name": "null_amount_count = 1",
+      "query": "SELECT null_amount_count FROM dq_report;",
+      "expected": "[{\"null_amount_count\":1}]",
+      "description": "Row 2 has NULL amount"
+    },
+    {
+      "name": "null_customer_count = 1",
+      "query": "SELECT null_customer_count FROM dq_report;",
+      "expected": "[{\"null_customer_count\":1}]",
+      "description": "Row 5 has NULL customer_id"
+    },
+    {
+      "name": "duplicate_count = 1",
+      "query": "SELECT duplicate_count FROM dq_report;",
+      "expected": "[{\"duplicate_count\":1}]",
+      "description": "Row 3 duplicates row 1 (same sale_date, customer_id, product_id, amount)"
+    },
+    {
+      "name": "negative_amount_count = 1",
+      "query": "SELECT negative_amount_count FROM dq_report;",
+      "expected": "[{\"negative_amount_count\":1}]",
+      "description": "Row 7 has amount = -50.00"
+    },
+    {
+      "name": "late_load_count = 1",
+      "query": "SELECT late_load_count FROM dq_report;",
+      "expected": "[{\"late_load_count\":1}]",
+      "description": "Row 6 was loaded at 14:00, which is after 08:00"
+    }
+  ]
+}

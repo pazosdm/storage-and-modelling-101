@@ -1,0 +1,26 @@
+{
+  "id": "ex22",
+  "name": "Partitioned Parquet Export",
+  "description": "Export data partitioned by date to Parquet and read back a specific partition",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "events_jan11 has 3 rows",
+      "query": "SELECT COUNT(*) AS n FROM events_jan11;",
+      "expected": "[{\"n\":3}]",
+      "description": "The Jan 11 partition has 3 events"
+    },
+    {
+      "name": "BR total for Jan 11 = 1.00",
+      "query": "SELECT SUM(value) AS total FROM events_jan11 WHERE country = 'BR';",
+      "expected": "[{\"total\":1.0}]",
+      "description": "Only one BR event on Jan 11: click with value=1.00"
+    },
+    {
+      "name": "US total for Jan 11 = 76.50",
+      "query": "SELECT SUM(value) AS total FROM events_jan11 WHERE country = 'US';",
+      "expected": "[{\"total\":76.5}]",
+      "description": "US Jan 11: click (1.50) + purchase (75.00) = 76.50"
+    }
+  ]
+}

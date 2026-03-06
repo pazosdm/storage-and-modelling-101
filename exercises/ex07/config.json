@@ -1,0 +1,32 @@
+{
+  "id": "ex07",
+  "name": "Build a Star Schema from 3NF",
+  "description": "Transform a normalized OLTP schema into a dimensional star schema for analytics",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "fact_sales has 6 rows",
+      "query": "SELECT COUNT(*) AS n FROM fact_sales;",
+      "expected": "[{\"n\":6}]",
+      "description": "One row per order line item (6 items across 4 orders)"
+    },
+    {
+      "name": "Total revenue matches",
+      "query": "SELECT ROUND(SUM(total_amount), 2) AS total FROM fact_sales;",
+      "expected": "[{\"total\":3089.9}]",
+      "description": "Total revenue: 999.99 + 59.98 + 499.99 + 149.95 + 999.99 + 999.98 = 3089.90"
+    },
+    {
+      "name": "dim_date covers Jan-Feb 2025",
+      "query": "SELECT COUNT(*) AS n FROM dim_date WHERE date_key BETWEEN '2025-01-01' AND '2025-02-28';",
+      "expected": "[{\"n\":59}]",
+      "description": "dim_date should have 59 days (31 in January + 28 in February 2025)"
+    },
+    {
+      "name": "All fact_sales dates exist in dim_date",
+      "query": "SELECT COUNT(*) AS n FROM fact_sales f WHERE NOT EXISTS (SELECT 1 FROM dim_date d WHERE d.date_key = f.order_date);",
+      "expected": "[{\"n\":0}]",
+      "description": "Every order_date in fact_sales must have a matching row in dim_date"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "id": "ex12",
+  "name": "SCD Type 1 (Overwrite)",
+  "description": "Apply SCD Type 1 logic: overwrite changed attributes, insert new records, preserve unchanged ones",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "4 products total after merge",
+      "query": "SELECT COUNT(*) AS n FROM dim_product;",
+      "expected": "[{\"n\":4}]",
+      "description": "3 original products + 1 new (Webcam HD)"
+    },
+    {
+      "name": "Product 2 name updated",
+      "query": "SELECT product_name FROM dim_product WHERE product_id = 2;",
+      "expected": "[{\"product_name\":\"Wireless Mouse v2\"}]",
+      "description": "Product 2 name changed from 'Wireless Mouse' to 'Wireless Mouse v2'"
+    },
+    {
+      "name": "Product 3 category updated",
+      "query": "SELECT category FROM dim_product WHERE product_id = 3;",
+      "expected": "[{\"category\":\"Connectivity\"}]",
+      "description": "Product 3 category changed from 'Accessories' to 'Connectivity'"
+    },
+    {
+      "name": "Product 4 inserted",
+      "query": "SELECT product_name FROM dim_product WHERE product_id = 4;",
+      "expected": "[{\"product_name\":\"Webcam HD\"}]",
+      "description": "New product Webcam HD must be inserted"
+    },
+    {
+      "name": "Product 1 unchanged",
+      "query": "SELECT updated_at FROM dim_product WHERE product_id = 1;",
+      "expected": "[{\"updated_at\":\"2025-01-01\"}]",
+      "description": "Product 1 (Laptop Pro) was not in stg_product_updates — must remain unchanged"
+    }
+  ]
+}

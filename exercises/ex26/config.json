@@ -1,0 +1,32 @@
+{
+  "id": "ex26",
+  "name": "ACID Transactions",
+  "description": "Use BEGIN/COMMIT/ROLLBACK to ensure atomic transfers and test rollback behavior",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "Account 1 balance = 800.00",
+      "query": "SELECT balance FROM account_balances WHERE account_id = 1;",
+      "expected": "[{\"balance\":800.0}]",
+      "description": "Account 1 transferred 200.00 out: 1000.00 - 200.00 = 800.00"
+    },
+    {
+      "name": "Account 2 balance = 700.00",
+      "query": "SELECT balance FROM account_balances WHERE account_id = 2;",
+      "expected": "[{\"balance\":700.0}]",
+      "description": "Account 2 received 200.00: 500.00 + 200.00 = 700.00"
+    },
+    {
+      "name": "Account 3 unchanged (rollback worked)",
+      "query": "SELECT balance FROM account_balances WHERE account_id = 3;",
+      "expected": "[{\"balance\":750.0}]",
+      "description": "Account 3 withdrawal attempt was rolled back — balance unchanged"
+    },
+    {
+      "name": "Total balance conserved",
+      "query": "SELECT SUM(balance) AS total FROM account_balances;",
+      "expected": "[{\"total\":2250.0}]",
+      "description": "Total money in the system must be conserved: 800+700+750=2250"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "id": "ex15",
+  "name": "Factless Fact Table and Rolling Metrics",
+  "description": "Build a factless fact table for login events and compute DAU and feature adoption metrics",
+  "setup_sql": "seed.sql",
+  "checks": [
+    {
+      "name": "fact_logins has 16 rows",
+      "query": "SELECT COUNT(*) AS n FROM fact_logins;",
+      "expected": "[{\"n\":16}]",
+      "description": "One row per raw_logins event"
+    },
+    {
+      "name": "DAU on 2025-01-12 = 4",
+      "query": "SELECT COUNT(DISTINCT user_id) AS n FROM fact_logins WHERE login_date = '2025-01-12';",
+      "expected": "[{\"n\":4}]",
+      "description": "U1, U2, U3, U4 all logged in on Jan 12"
+    },
+    {
+      "name": "Free segment dashboard users = 2",
+      "query": "SELECT COUNT(DISTINCT fl.user_id) AS n FROM fact_logins fl JOIN dim_user_login u ON fl.user_id = u.user_id WHERE u.segment = 'Free' AND fl.feature_used = 'dashboard';",
+      "expected": "[{\"n\":2}]",
+      "description": "Free segment users (Alice=U1, Carol=U3) both used the dashboard"
+    }
+  ]
+}
