@@ -147,24 +147,3 @@ For each exercise, the grader:
 5. Compares the output against expected values
 
 Numeric comparisons use a tolerance of ±0.01 to handle decimal rounding differences.
-
-## Suggested Learning Path
-
-- **Beginners** — Start with ex01–ex04 (normalization fundamentals)
-- **Intermediate** — Work through ex05–ex13 (ER modeling, star schemas, SCDs)
-- **Advanced** — Tackle ex14–ex30 (Data Vault, JSON, file formats, CDC, indexes)
-
-## Manual DuckDB Testing
-
-You can use the DuckDB CLI to test queries interactively:
-
-```bash
-duckdb
--- Paste your seed SQL, then experiment
-```
-
-Or run a specific exercise seed directly:
-
-```bash
-duckdb < exercises/ex01/seed.sql
-```
