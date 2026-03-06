@@ -19,18 +19,49 @@ A hands-on learning platform for data engineers (junior to senior) to practice *
 | 9 | ex27–ex28 | Indexes, columnar scan optimization |
 | 10 | ex29–ex30 | Data contracts, schema constraints, quality metrics |
 
-## Prerequisites
+## Setup
 
-- **Go** 1.21+ — [golang.org/doc/install](https://golang.org/doc/install)
-- **DuckDB CLI** (optional, for manual testing)
+### Option A — Local (Go required)
 
-Install both with Homebrew:
+Install Go and DuckDB CLI via Homebrew:
 
 ```bash
-make setup
+make setup   # runs: brew install go duckdb
+make build   # compiles the grader → ./grader
 ```
 
-## Quickstart
+> **Note:** If you just installed Go and `make build` fails with "command not found", open a new terminal tab first. Homebrew updates your PATH on shell startup, so the current session won't see the new install until you restart it.
+
+### Option B — Docker (no local installs needed)
+
+If you don't want to install Go, Docker works out of the box. The image bundles the compiled grader and DuckDB. Your `solutions/` folder is mounted as a live volume, so edits you make locally are immediately visible inside the container.
+
+```bash
+# First time: build the image (takes ~2 min, downloads Go + DuckDB)
+docker compose build
+
+# Start an interactive shell inside the container
+docker compose run --rm learn-duckdb bash
+
+# Inside the container, use the grader normally:
+grader list
+grader grade ex01
+grader grade-all
+```
+
+You **edit solution files on your machine** with your usual editor — the container picks up changes automatically because `solutions/` is mounted:
+
+```
+Your editor  →  solutions/ex01.sql  →  mounted into container  →  grader grades it
+```
+
+To grade a single exercise without opening a shell:
+
+```bash
+docker compose run --rm learn-duckdb grader grade ex01
+```
+
+## Quickstart (local)
 
 ```bash
 # 1. Build the grader
@@ -42,8 +73,10 @@ make build
 # 3. Read an exercise
 cat exercises/ex01/README.md
 
-# 4. Write your solution
-vim solutions/ex01.sql
+# 4. Write your solution (use your preferred editor)
+code solutions/ex01.sql       # VS Code
+cursor solutions/ex01.sql     # Cursor
+open -a "TextEdit" solutions/ex01.sql  # macOS default
 
 # 5. Grade your solution
 ./grader grade ex01
@@ -64,11 +97,14 @@ cat exercises/ex07/README.md
 
 ### Step 2 — Write your solution
 
-Solutions live in `solutions/`. The files are pre-created with a comment header:
+Solutions live in `solutions/`. The files are pre-created with a comment header — open one in your editor and write your SQL below the comment.
 
 ```bash
-# Open in your editor
-vim solutions/ex07.sql
+# Pick your editor:
+code solutions/ex07.sql       # VS Code
+cursor solutions/ex07.sql     # Cursor
+open -a "TextEdit" solutions/ex07.sql  # macOS default
+vim solutions/ex07.sql        # Vim
 ```
 
 ### Step 3 — Grade your work
@@ -78,7 +114,8 @@ vim solutions/ex07.sql
 ```
 
 Example output:
-```
+
+```text
 === Grading: Build a Star Schema from 3NF ===
 
 ✅ fact_sales has 6 rows
@@ -99,7 +136,8 @@ Once you've worked through the exercises:
 ```
 
 Example output:
-```
+
+```text
 === Results Summary ===
 
 ✅ ex01 - Normalize a Wide Table to 3NF (4/4 checks)
@@ -113,7 +151,7 @@ Score: 18/30 exercises passed
 
 ## Project Structure
 
-```
+```text
 .
 ├── exercises/              # Exercise definitions (read-only)
 │   ├── ex01/
@@ -133,6 +171,8 @@ Score: 18/30 exercises passed
 │   ├── go.mod
 │   └── go.sum
 │
+├── Dockerfile              # Builds grader + installs DuckDB in Alpine Linux
+├── docker-compose.yml      # Mounts solutions/ and exercises/ as live volumes
 └── Makefile
 ```
 
